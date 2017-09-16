@@ -16,7 +16,7 @@ enum Zones {
   LivingRoom_FrontBack = 0,
   Kitchen_Toilet = 1,
   Hall = 2,
-  SofiaBed = 3,
+  SmallBed = 3,
   Front_Back_Bed = 4,
   Study = 5,
   Bathroom = 6,
@@ -26,7 +26,7 @@ unsigned char TempBuses[NUM_ZONES] = {
   12, // LivingRoom_FrontBack
   11, // Kitchen_Toilet
   10, // Hall
-  9, // SofiaBed
+  9, // SmallBed
   2, // Front_Back_Bed
   3, // Study
   8, // Bathroom
@@ -35,7 +35,7 @@ OneWire oneWires[NUM_ZONES] = {
   OneWire(TempBuses[LivingRoom_FrontBack]),
   OneWire(TempBuses[Kitchen_Toilet]),
   OneWire(TempBuses[Hall]),
-  OneWire(TempBuses[SofiaBed]),
+  OneWire(TempBuses[SmallBed]),
   OneWire(TempBuses[Front_Back_Bed]),
   OneWire(TempBuses[Study]),
   OneWire(TempBuses[Bathroom]),
@@ -44,13 +44,11 @@ DallasTemperature sensors[NUM_ZONES] = {
   DallasTemperature(&oneWires[LivingRoom_FrontBack]),
   DallasTemperature(&oneWires[Kitchen_Toilet]),
   DallasTemperature(&oneWires[Hall]),
-  DallasTemperature(&oneWires[SofiaBed]),
+  DallasTemperature(&oneWires[SmallBed]),
   DallasTemperature(&oneWires[Front_Back_Bed]),
   DallasTemperature(&oneWires[Study]),
   DallasTemperature(&oneWires[Bathroom]),
 };
-
-#define DALLAS_UID 0x33
 
 void setup(void)
 {
@@ -93,9 +91,11 @@ void loop(void)
 {
   if (Serial.available() > 0) {
     char cmd = Serial.read();
+
     Serial.print(":::");
     Serial.print(cmd);
     Serial.println(":::");
+
     if (cmd == 'T') {
       // read temps
       Serial.println(">T");
@@ -147,6 +147,7 @@ void loop(void)
       Serial.println("");
       uint8_t crc = OneWire::crc8(data, 5);
       if (crc != data[5]) {
+        // could happen if data read timeout too
         Serial.print("Invalid crc, calculated:");
         Serial.println(crc,HEX);
       } else {

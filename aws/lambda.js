@@ -1,6 +1,6 @@
 //Environment Configuration
 var config = {};
-// replace the three lines below...
+// replace the four lines below...
 config.IOT_BROKER_ENDPOINT      = "xxx";
 config.IOT_BROKER_REGION        = "xxx";
 config.IOT_THING_NAME           = "xxx";
@@ -14,18 +14,20 @@ var iotData = new AWS.IotData({endpoint: config.IOT_BROKER_ENDPOINT});
 
 exports.handler = function (request, context) {
     log("DEGUG:", "Request",  JSON.stringify(request));
+
     if (request.directive.header.namespace === 'Alexa.Discovery') {
-        log("DEGUG:", "Discover request",  JSON.stringify(request));
+        log("DEGUG:", "Discover request",  "");
         handleDiscovery(request, context, "");
     } else if (request.directive.header.namespace === 'Alexa.ThermostatController') {
-        log("DEBUG:", "ThermostatController Request", JSON.stringify(request));
+        log("DEBUG:", "ThermostatController Request", "");
         updateState(request, context);
     } else if (request.directive.header.namespace === 'Alexa' && request.directive.header.name === 'ReportState') {
-        log("DEBUG:", "TemperatureSensor Request", JSON.stringify(request));
+        log("DEBUG:", "TemperatureSensor Request", "");
         sendStateReport(request, context);
     } else {
-        log("DEBUG:", "Unexpected Request", JSON.stringify(request));
+        log("ERROR:", "Unexpected Request", "");
         context.fail();
+        return;
     }
 
     function handleDiscovery(request, context) {

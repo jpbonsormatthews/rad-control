@@ -1,6 +1,6 @@
 //Environment Configuration
 var config = {};
-// replace the four lines below...
+// replace the lines below...
 config.IOT_BROKER_ENDPOINT      = "xxx";
 config.IOT_BROKER_REGION        = "xxx";
 config.IOT_THING_NAME           = "xxx";

@@ -39,8 +39,7 @@ const endpoint = {
             "version": "3",
             "properties": {
                 "supported": [
-                    { "name": "targetSetpoint" },
-                    { "name": "thermostatMode" }
+                    { "name": "targetSetpoint" }
                 ],
                 "proactivelyReported": false,
                 "retrievable": true
@@ -84,7 +83,6 @@ exports.handler = function (request, context) {
     }
 
     // @todo uuid for message id
-    // @todo get rid of the thermostat mode
     // @todo timestamps from somehwere - aws iot?
 
     function handleDiscovery(request, context) {
@@ -139,13 +137,6 @@ exports.handler = function (request, context) {
                                     "scale": "CELSIUS",
                                     "value": dataJ.state.desired[request.directive.endpoint.endpointId]
                                 },
-                                "timeOfSample": "2018-01-06T20:44:30.45Z",
-                                "uncertaintyInMilliseconds": 200
-                            },
-                            {
-                                "name": "thermostatMode",
-                                "namespace": "Alexa.ThermostatController",
-                                "value": "AUTO",
                                 "timeOfSample": "2018-01-06T20:44:30.45Z",
                                 "uncertaintyInMilliseconds": 200
                             },
@@ -239,13 +230,6 @@ exports.handler = function (request, context) {
                                             "scale": "CELSIUS",
                                             "value": request.directive.payload.targetSetpoint.value
                                         },
-                                        "timeOfSample": "2018-01-06T20:44:30.45Z",
-                                        "uncertaintyInMilliseconds": 200
-                                    },
-                                    {
-                                        "name": "thermostatMode",
-                                        "namespace": "Alexa.ThermostatController",
-                                        "value": "AUTO",
                                         "timeOfSample": "2018-01-06T20:44:30.45Z",
                                         "uncertaintyInMilliseconds": 200
                                     },

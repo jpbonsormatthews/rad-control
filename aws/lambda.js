@@ -9,6 +9,59 @@ config.IOT_THING_NAME           = "xxx";
 var AWS = require('aws-sdk');
 AWS.config.region = config.IOT_BROKER_REGION;
 
+const names = {
+    "kitchen": "Kitchen",
+    "wc": "Downstairs Toilet",
+    "living": "Living Room",
+    "hall": "Hall",
+    "downstairs": "Downstairs",
+    "guestbed": "Guest Bedroom",
+    "mainbed": "Main Bedroom",
+    "office": "Office",
+    "smallbed": "Small Bedroom",
+    "upstairs": "Upstairs",
+    "house": "Whole House"
+};
+
+const endpoint = {
+    "endpointId": "",
+    "manufacturerName": "JBM",
+    "friendlyName": "",
+    "description": "",
+    "displayCategories": ["THERMOSTAT"],
+    "cookie": {
+    },
+    "capabilities":
+    [
+        {
+            "type": "AlexaInterface",
+            "interface": "Alexa.ThermostatController",
+            "version": "3",
+            "properties": {
+                "supported": [
+                    { "name": "targetSetpoint" },
+                    { "name": "thermostatMode" }
+                ],
+                "proactivelyReported": false,
+                "retrievable": true
+            }
+        },
+        {
+            "type": "AlexaInterface",
+            "interface": "Alexa.TemperatureSensor",
+            "version": "3",
+            "properties": {
+                "supported": [
+                    { "name": "temperature" }
+                ],
+                "proactivelyReported": false,
+                "retrievable": true
+            }
+        }
+    ]
+};
+
+
 //Initializing client for IoT
 var iotData = new AWS.IotData({endpoint: config.IOT_BROKER_ENDPOINT});
 
@@ -30,49 +83,23 @@ exports.handler = function (request, context) {
         return;
     }
 
+    // @todo uuid for message id
+    // @todo get rid of the thermostat mode
+    // @todo timestamps from somehwere - aws iot?
+
     function handleDiscovery(request, context) {
         var payload = {
-            "endpoints":
-            [
-                {
-                    "endpointId": "kitchen-stat",
-                    "manufacturerName": "JBM",
-                    "friendlyName": "Kitchen",
-                    "description": "Kitchen",
-                    "displayCategories": ["THERMOSTAT"],
-                    "cookie": {
-                    },
-                    "capabilities":
-                    [
-                        {
-                            "type": "AlexaInterface",
-                            "interface": "Alexa.ThermostatController",
-                            "version": "3",
-                            "properties": {
-                                "supported": [
-                                    { "name": "targetSetpoint" },
-                                    { "name": "thermostatMode" }
-                                ],
-                                "proactivelyReported": false,
-                                "retrievable": true
-                            }
-                        },
-                        {
-                            "type": "AlexaInterface",
-                            "interface": "Alexa.TemperatureSensor",
-                            "version": "3",
-                            "properties": {
-                                "supported": [
-                                    { "name": "temperature" }
-                                ],
-                                "proactivelyReported": false,
-                                "retrievable": true
-                            }
-                        }
-                    ]
-                }
-            ]
+            "endpoints": []
         };
+
+        var name;
+        for (name in names) {
+            var ep = Object.assign({}, endpoint);
+            ep.endpointId = name;
+            ep.friendlyName = names[name];
+            ep.description = names[name];
+            payload.endpoints.push(ep);
+        }
         var header = request.directive.header;
         header.name = "Discover.Response";
         log("DEBUG", "Discovery Response: ", JSON.stringify({ header: header, payload: payload }));
@@ -110,7 +137,7 @@ exports.handler = function (request, context) {
                                 "namespace": "Alexa.ThermostatController",
                                 "value": {
                                     "scale": "CELSIUS",
-                                    "value": dataJ.state.desired.kitchen
+                                    "value": dataJ.state.desired[request.directive.endpoint.endpointId]
                                 },
                                 "timeOfSample": "2018-01-06T20:44:30.45Z",
                                 "uncertaintyInMilliseconds": 200
@@ -127,7 +154,7 @@ exports.handler = function (request, context) {
                                 "namespace": "Alexa.TemperatureSensor",
                                 "value": {
                                     "scale": "CELSIUS",
-                                    "value":  dataJ.state.reported.kitchen
+                                    "value":  dataJ.state.reported[request.directive.endpoint.endpointId]
                                 },
                                 "timeOfSample": "2018-01-06T20:44:30.45Z",
                                 "uncertaintyInMilliseconds": 200
@@ -147,7 +174,7 @@ exports.handler = function (request, context) {
                                 "type": "BearerToken",
                                 "token": request.directive.endpoint.scope.token
                             },
-                            "endpointId": "kitchen-stat"
+                            "endpointId": request.directive.endpoint.endpointId
                         },
                         "payload": {}
                     }
@@ -174,13 +201,16 @@ exports.handler = function (request, context) {
 
                 var payloadObj={ "state":
                                  { "desired":
-                                   {"kitchen":request.directive.payload.targetSetpoint.value}
+                                   {}
                                  }
                                };
+                payloadObj.state.desired[request.directive.endpoint.endpointId] = request.directive.payload.targetSetpoint.value;
                 var paramsUpdate = {
                     "thingName" : config.IOT_THING_NAME,
                     "payload" : JSON.stringify(payloadObj)
                 };
+                console.log("DEBUG: shadow update");
+                console.log(paramsUpdate);
                 iotData.updateThingShadow(paramsUpdate, function(err, dataUp) {
                     if (err){
                         console.log("ERROR: failed to update shadow for setting");
@@ -224,7 +254,7 @@ exports.handler = function (request, context) {
                                         "namespace": "Alexa.TemperatureSensor",
                                         "value": {
                                             "scale": "CELSIUS",
-                                            "value": dataJ.state.reported.kitchen
+                                            "value": dataJ.state.reported[request.directive.endpoint.endpointId]
                                         },
                                         "timeOfSample": "2018-01-06T20:44:30.45Z",
                                         "uncertaintyInMilliseconds": 200
@@ -244,7 +274,7 @@ exports.handler = function (request, context) {
                                         "type": "BearerToken",
                                         "token": request.directive.endpoint.scope.token
                                     },
-                                    "endpointId": "kitchen-stat"
+                                    "endpointId": request.directive.endpoint.endpointId
                                 },
                                 "payload": {}
                             }
